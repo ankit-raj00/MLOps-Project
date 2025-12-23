@@ -1,0 +1,114 @@
+======================
+Python Project Packaging & Development - Detailed Summary
+======================
+
+1. pyproject.toml
+-----------------
+- Purpose: Modern, standard configuration file for Python projects.
+- Defines:
+  1. Project metadata: name, version, description, authors.
+  2. Dependencies: what external packages your project needs (can read from requirements.txt).
+  3. Build system: which tool to use to build/install the package (usually setuptools).
+  4. Tool configs: e.g., black, isort, mypy.
+- Example:
+  [project]
+  name = "mypackage"
+  version = "0.1"
+  description = "My MLOps project"
+  authors = [{name="Ankit", email="example@gmail.com"}]
+
+  [tool.setuptools]
+  packages = {find = {where=["src"]}}
+
+  [tool.setuptools.dynamic]
+  dependencies = {file="requirements.txt"}
+
+- Key point: This is static and declarative, safer and easier for modern tools.
+
+2. setup.py
+-----------
+- Purpose: Old way to define a package, dependencies, and build/install instructions.
+- Why still used:
+  - Backward compatibility with older tools and pipelines.
+  - Can include dynamic logic (e.g., auto-generating versions or conditional dependencies).
+- Minimal setup.py for modern projects:
+  from setuptools import setup
+  setup()  # Uses pyproject.toml automatically
+- Comparison: .toml is modern and static; setup.py is legacy and dynamic.
+
+3. Folder structure and packages
+--------------------------------
+- Package vs Module:
+  - Folder with __init__.py → package
+  - Single .py file → module
+  - __init__.py inside a folder tells Python this folder is a package.
+- Example:
+  project/
+  ├── src/                
+  │   ├── __init__.py
+  │   ├── module1.py      
+  │   └── app.py          
+  ├── pyproject.toml
+  ├── setup.py
+- Key point: Only folders with __init__.py are considered packages. Standalone files like app.py are modules inside that package.
+
+4. find_packages() / packages={find={}}
+--------------------------------------
+- Purpose: Automatically discover all packages in your project.
+- How it works:
+  - Scans folders in the project directory.
+  - Includes only folders with __init__.py as packages.
+  - Automatically includes subpackages if they also have __init__.py.
+- Standalone scripts or folders without __init__.py are ignored.
+- Example:
+  src/                  # included
+  ├── __init__.py       # package
+  ├── module1.py        # module
+  └── submodule/
+      ├── __init__.py   # subpackage
+      └── module2.py    # module
+
+5. -e . (editable install)
+--------------------------
+- Purpose: Install your local package in editable/development mode.
+- What it does:
+  1. Builds your project as a package.
+  2. Creates a link from your Python environment to the local folder.
+  3. Any changes in your source code (modules, classes, functions) are immediately available without reinstalling.
+- Usage in requirements.txt:
+  numpy>=1.25
+  -e .
+- Effect:
+  - Makes your local package (src) importable anywhere in the same environment.
+  - Live edits reflect immediately.
+  - Ideal for development workflow.
+- Without -e .:
+  - Python may not see your local modules if your script (app.py) is outside the package folder.
+  - You’d need to manually adjust sys.path or move files.
+
+6. Why we need -e .
+-------------------
+1. Development convenience: No need to reinstall the package after every code change.
+2. Importable modules anywhere in the environment:
+   from src.module1 import MyClass
+3. Keeps code organized: Treats src/ as a proper package; avoids messing with sys.path or relative imports.
+4. Supports multiple projects in virtual environments: Each project can have its own editable package without conflicts.
+
+7. Best practices
+-----------------
+- Use pyproject.toml for modern project metadata, dependencies, and build config.
+- Keep setup.py minimal for backward compatibility.
+- Use src/ as your package folder with __init__.py.
+- Use -e . during development so changes are live and imports work anywhere in the environment.
+- Use virtual environments to avoid conflicts when using common folder names like src.
+- Give your package a unique name in pyproject.toml (can be different from src) to avoid import conflicts.
+
+TL;DR (Super Simplified)
+------------------------
+File / Concept       | Purpose
+--------------------|-------------------------------------------------------
+pyproject.toml       | Modern, static config: metadata, dependencies, build system
+setup.py             | Old, dynamic config: legacy builds, backward compatibility
+src/                 | Package folder containing modules and classes
+find_packages()      | Automatically detects folders with __init__.py to include as packages
+-e .                 | Install local package editable, live code updates, importable anywhere
