@@ -112,3 +112,115 @@ setup.py             | Old, dynamic config: legacy builds, backward compatibilit
 src/                 | Package folder containing modules and classes
 find_packages()      | Automatically detects folders with __init__.py to include as packages
 -e .                 | Install local package editable, live code updates, importable anywhere
+============================
+📌 Python Logging - Detailed Notes
+============================
+
+1. Default Logging Behavior
+---------------------------
+- `import logging` alone → uses ROOT LOGGER by default
+- Level: WARNING+
+- Output: terminal only
+- No file handlers or formatting
+- Example:
+    import logging
+    logging.info("Hello")  # Will not show by default
+
+- ✅ Key observation:
+  1. Simple logging outputs only to **terminal** if not configured
+  2. Logs to **files, formatted messages, and rotations** happen **only after configuration**
+
+---
+
+2. Configuring Logging
+----------------------
+- Use a function to configure logging (handlers, formatters, levels)
+- Common setup:
+    - ROOT LOGGER
+    - RotatingFileHandler (log files)
+    - ConsoleHandler (terminal)
+    - Formatter (timestamps, module, level)
+- Example:
+    import logging
+    from logging.handlers import RotatingFileHandler
+
+    def configure_logger():
+        logger = logging.getLogger()  # ROOT LOGGER
+        logger.setLevel(logging.DEBUG)
+
+        formatter = logging.Formatter("[%(asctime)s] %(name)s - %(levelname)s - %(message)s")
+
+        # File handler
+        file_handler = RotatingFileHandler("logs/app.log", maxBytes=5*1024*1024, backupCount=3)
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(logging.DEBUG)
+
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        console_handler.setLevel(logging.INFO)
+
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
+
+- ✅ Key point:
+  - Must configure logging **before logging messages** for files, formatting, rotation
+  - If configuration is in a module, that module must be imported so code runs
+
+---
+
+3. Using Logging Across Modules
+-------------------------------
+- Configure logging **once in the entry-point** (e.g., main.py)
+    from src.logger import configure_logger
+    configure_logger()
+
+- In any other module:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("Message")
+- Do **not** reconfigure in every module
+- ✅ Key point:
+  - Once configured, logging is **globally accessible**, no need to import logger file everywhere
+
+---
+
+4. How Imports Affect Logging
+-----------------------------
+- Importing a module executes **top-level code once**
+- Functions/classes in the module **do NOT run automatically**
+- Top-level `configure_logger()` in a module runs automatically on import
+- Best practice: call `configure_logger()` explicitly in entry-point
+
+---
+
+5. Logging and Exceptions
+-------------------------
+- Custom exceptions can log errors:
+    import logging
+
+    class MyException(Exception):
+        def __init__(self, msg):
+            super().__init__(msg)
+            logging.error(f"Error occurred: {msg}")
+
+- Logging in exceptions **works only if logging is configured first**
+
+---
+
+6. Your Key Observations / Rules
+---------------------------------
+1. Simple logging outputs **only to terminal** if not configured
+2. To log to files or have formatted messages, logging **must be configured**
+3. Once logging is configured, it is **globally accessible** — you do not need to import the logger file in every module
+4. If configuration is in a module, the module **must be imported** for configuration code to run
+
+---
+
+7. Key Takeaways
+----------------
+✅ Configure logging **once**, in entry-point  
+✅ Use `logging.getLogger(__name__)` in all modules  
+✅ Do **not** call `configure_logger()` everywhere  
+✅ Importing logging does **not** create files  
+✅ Top-level code in modules executes on import, functions run only when called
